@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./Dashboard.css";
 
 const products = [
@@ -44,6 +45,34 @@ const products = [
 ];
 
 export default function Dashboard() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const pageSize = 5;
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "" || product.category === selectedCategory;
+
+    const matchesStatus =
+      selectedStatus === "" || product.status === selectedStatus;
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+
+  const startIndex = (currentPage - 1) * pageSize;
+
+  const paginatedProducts = filteredProducts.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -81,24 +110,30 @@ export default function Dashboard() {
               type="search"
               placeholder="Search products..."
               aria-label="Search products"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
             />
 
-            <select aria-label="Filter by category" defaultValue="">
-              <option value="" disabled>
-                Category
-              </option>
-              <option value="figures">Figures</option>
-              <option value="utility">Utility</option>
-              <option value="home">Home</option>
+            <select
+              aria-label="Filter by category"
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+            >
+              <option value="">All Categories</option>
+              <option value="Figures">Figures</option>
+              <option value="Utility">Utility</option>
+              <option value="Home">Home</option>
             </select>
 
-            <select aria-label="Filter by status" defaultValue="">
-              <option value="" disabled>
-                Status
-              </option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
+            <select
+              aria-label="Filter by status"
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="In Stock">In Stock</option>
+              <option value="Low Stock">Low Stock</option>
+              <option value="Out of Stock">Out of Stock</option>
             </select>
           </div>
         </div>
@@ -116,7 +151,7 @@ export default function Dashboard() {
             <span>Actions</span>
           </div>
 
-          {products.map((product) => (
+          {paginatedProducts.map((product) => (
             <div className="inventory-row" key={product.id}>
               <span>
                 <input type="checkbox" aria-label={`Select ${product.name}`} />
@@ -141,23 +176,41 @@ export default function Dashboard() {
         </div>
 
         <div className="pagination">
-          <span>Showing 1–5 of 128 products</span>
+          <span>
+            Showing {filteredProducts.length === 0 ? 0 : startIndex + 1}
+            {"–"}
+            {Math.min(startIndex + pageSize, filteredProducts.length)}
+            {" of "}
+            {filteredProducts.length} products
+          </span>
 
           <div className="pagination-controls">
-            <button type="button" disabled>
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((page) => page - 1)}
+            >
               ←
             </button>
-
-            <button type="button" className="active">
-              1
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={currentPage === page ? "active" : ""}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              )
+            )}
+            <button
+              type="button"
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage((page) => page + 1)}
+            >
+              →
             </button>
-
-            <button type="button">2</button>
-            <button type="button">3</button>
-            <button type="button">4</button>
-            <button type="button">5</button>
-
-            <button type="button">→</button>
           </div>
         </div>
       </section>
